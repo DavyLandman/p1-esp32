@@ -1,0 +1,3 @@
+- Use any device that has 2 or more UART. For example: esp32c3 or esp32s2 (both cheap and only have one core)
+- flash & monitor via JTAG
+- 
