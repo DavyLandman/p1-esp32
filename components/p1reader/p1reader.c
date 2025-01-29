@@ -15,7 +15,7 @@ static const char *TAG = "p1-reader";
 
 
 struct config {
-    ringbuf_t target;
+    StreamBufferHandle_t target;
     uart_port_t port;
 };
 
@@ -26,8 +26,7 @@ static void read_serial_task(struct config const * ctx) {
     while(true) {
         int read = uart_read_bytes(ctx->port, buffer, ROUGH_P1_SIZE, pdMS_TO_TICKS(50));
         if (read > 0) {
-            buffer[read] = '\0';
-            ringbuf_memcpy_into(ctx->target, buffer, read);
+            xStreamBufferSend(ctx->target, buffer, read, pdMS_TO_TICKS(50));
         }
     }
 }
@@ -64,7 +63,7 @@ static void setup_uart(const uart_port_t uart_num, gpio_num_t rx_pin) {
     ESP_ERROR_CHECK(uart_driver_install(uart_num, uart_buffer_size, 0, 0, NULL, __INTR_FLAGS));
 }
 
-void p1_init(const uart_port_t uart_num, gpio_num_t rx_pin, ringbuf_t target) {
+void p1_start(const uart_port_t uart_num, gpio_num_t rx_pin, StreamBufferHandle_t target) {
     setup_uart(uart_num, rx_pin);
 
     struct config * ctx = malloc(sizeof(struct config));

@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
-#include "ringbuf.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/stream_buffer.h"
 
-void server_start(uint16_t port, ringbuf_t source);
+
+void server_start(uint16_t port, StreamBufferHandle_t source);

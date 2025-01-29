@@ -17,7 +17,7 @@ static const char *TAG = "wifi-con";
 #define u_strncpy(to, from) memcpy(to, from, MIN(sizeof(to), strlen(from) + 1))
 
 
-void wifi_init(char const *ssid, char const *passwd) {
+void wifi_start(char const *ssid, char const *passwd) {
     ESP_LOGI(TAG, "Initializing nvs");
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
