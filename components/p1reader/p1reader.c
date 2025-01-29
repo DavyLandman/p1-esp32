@@ -21,7 +21,8 @@ struct config {
 
 #define ROUGH_P1_SIZE 1024
 
-static void read_serial_task(struct config const * ctx) {
+static void read_serial_task(void *arg) {
+    struct config const * ctx = arg;
     char *buffer = malloc(ROUGH_P1_SIZE + 1);
     while(true) {
         int read = uart_read_bytes(ctx->port, buffer, ROUGH_P1_SIZE, pdMS_TO_TICKS(50));

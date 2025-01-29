@@ -58,18 +58,20 @@ static bool send_data(int client_sock, uint8_t const* data, size_t size) {
 
 static const size_t IDEAL_PACKET_SIZE = 1024;
 
-static void tcp_server_task(struct config const *ctx) {
+static void tcp_server_task(void *arg) {
+    struct config const *ctx = arg;
     int server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP); // TODO: shouldn't it be _TCP?
     LWIF_ERROR_CHECK(server_socket,  "Unable to create socket")
     ESP_LOGI(TAG, "Socket created");
 
-    struct sockaddr_in addr = {
-        .sin_addr.s_addr = htonl(INADDR_ANY),
-        .sin_family = AF_INET,
-        .sin_port = htons(ctx->port)
-    };
+    struct sockaddr addr;
 
-    int err = bind(server_socket, &addr, sizeof(addr));
+    struct sockaddr_in *addr4 = (void*)(&addr);
+    addr4->sin_addr.s_addr = htonl(INADDR_ANY);
+    addr4->sin_family = AF_INET;
+    addr4->sin_port = htons(ctx->port);
+
+    int err = bind(server_socket, &addr, sizeof(struct sockaddr_in));
     LWIF_ERROR_CHECK(err, "Unable to bind socket")
     ESP_LOGI(TAG, "Socket bound to address");
 
