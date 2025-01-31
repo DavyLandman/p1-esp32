@@ -40,9 +40,9 @@ static void read_serial_task(void *arg) {
 #endif
 
 static void setup_uart(const uart_port_t uart_num, gpio_num_t rx_pin) {
-    ESP_LOGI(TAG, "Starting serial setup");
+    ESP_LOGI(TAG, "Starting serial setup UART %d on GPIO %d", uart_num, rx_pin);
     // Configure UART parameters
-    ESP_LOGI(TAG, "uart param");
+    ESP_LOGI(TAG, "configure param");
 
     uart_config_t p1_serial_config = {
         .baud_rate = 115200,
@@ -54,14 +54,15 @@ static void setup_uart(const uart_port_t uart_num, gpio_num_t rx_pin) {
     };
 
     ESP_ERROR_CHECK(uart_param_config(uart_num, &p1_serial_config));
-    ESP_LOGI(TAG, "uart set pin");
+    ESP_LOGI(TAG, "set pin");
     ESP_ERROR_CHECK(uart_set_pin(uart_num, -1, rx_pin, -1, -1));
-    ESP_LOGI(TAG, "uart set line");
+    ESP_LOGI(TAG, "set inverted line");
     ESP_ERROR_CHECK(uart_set_line_inverse(uart_num, UART_SIGNAL_RXD_INV));
 
     const int uart_buffer_size = max(UART_HW_FIFO_LEN(uart_num), ROUGH_P1_SIZE * 2);
-    ESP_LOGI(TAG, "uart driver install");
+    ESP_LOGI(TAG, "driver install");
     ESP_ERROR_CHECK(uart_driver_install(uart_num, uart_buffer_size, 0, 0, NULL, __INTR_FLAGS));
+    ESP_LOGI(TAG, "ready to start reading");
 }
 
 void p1_start(const uart_port_t uart_num, gpio_num_t rx_pin, StreamBufferHandle_t target) {

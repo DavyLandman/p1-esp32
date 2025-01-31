@@ -18,8 +18,8 @@ static const char *TAG = "p1-esp32";
 #define UART0_RX_PIN GPIO_NUM_40
 #define UART1_RX_PIN GPIO_NUM_38
 #elif CONFIG_IDF_TARGET_ESP32C3
-#define UART0_RX_PIN GPIO_NUM_0
-#define UART1_RX_PIN GPIO_NUM_1
+#define UART0_RX_PIN GPIO_NUM_3
+#define UART1_RX_PIN GPIO_NUM_4
 #else
 #error "missing config for uarts pins"
 #endif
