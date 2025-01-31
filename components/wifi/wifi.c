@@ -12,6 +12,46 @@
 
 static const char *TAG = "wifi-con";
 
+static int retry_num = 0;
+
+static void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+    if (event_id == WIFI_EVENT_STA_START)
+    {
+        printf("WIFI CONNECTING....\n");
+    }
+    else if (event_id == WIFI_EVENT_STA_CONNECTED)
+    {
+        printf("WiFi CONNECTED\n");
+        retry_num = 0;
+    }
+    else if (event_id == WIFI_EVENT_STA_DISCONNECTED)
+    {
+        printf("WiFi lost connection\n");
+        if (retry_num < 5)
+        {
+            ESP_ERROR_CHECK(esp_wifi_connect());
+            retry_num++;
+            printf("Retrying to Connect...\n");
+        }
+    }
+    else if (event_id == IP_EVENT_STA_GOT_IP)
+    {
+        printf("Wifi got IP...\n\n");
+    }
+    else if (event_id == WIFI_EVENT_STA_STOP) {
+        printf("WIFI: sta stop\n");
+    }
+    else if (event_id == WIFI_EVENT_HOME_CHANNEL_CHANGE) {
+        wifi_event_home_channel_change_t *dt =event_data;
+        printf("Chang channel, from %d to %d\n", dt->old_chan, dt->new_chan);
+    }
+    else {
+        printf("Got: %li: %p\n", event_id, event_data);
+    }
+}
+
+
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
 #define u_strncpy(to, from) memcpy(to, from, MIN(sizeof(to), strlen(from) + 1))
@@ -36,6 +76,8 @@ void wifi_start(char const *ssid, char const *passwd) {
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) ); 
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_event_handler, NULL));
     wifi_config_t wifi_configuration = { //struct wifi_config_t var wifi_configuration
         .sta= {
             .ssid = {0},
