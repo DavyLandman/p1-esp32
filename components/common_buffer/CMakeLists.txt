@@ -1,5 +1,4 @@
 idf_component_register(
-    SRCS "server.c"
+    SRCS "common_buffer.c" 
     INCLUDE_DIRS "."
-    REQUIRES  common_buffer 
     )

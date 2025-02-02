@@ -1,9 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/stream_buffer.h"
+#include "common_buffer.h"
 
 
-void server_start(uint16_t port, StreamBufferHandle_t source);
+
+void server_start(uint16_t port, common_buffer_t* source);

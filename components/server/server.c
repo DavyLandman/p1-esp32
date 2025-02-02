@@ -13,7 +13,7 @@ static const char *TAG = "tcp-server";
 
 
 struct config {
-    StreamBufferHandle_t source;
+    common_buffer_t * source;
     uint16_t port;
 };
 
@@ -37,7 +37,7 @@ static void configure_socket(int socket) {
     LWIF_SOCK_OPT(socket, IPPROTO_TCP, TCP_KEEPCNT, 5)
 }
 
-static bool send_data(int client_sock, uint8_t const* data, size_t size) {
+static bool send_data(int client_sock, char const* data, size_t size) {
     while (size > 0) {
         ssize_t current_send = send(client_sock, data, size, 0);
         if (current_send <= 0) {
@@ -55,8 +55,6 @@ static bool send_data(int client_sock, uint8_t const* data, size_t size) {
     }
     return true;
 }
-
-static const size_t IDEAL_PACKET_SIZE = 1024;
 
 static void tcp_server_task(void *arg) {
     struct config const *ctx = arg;
@@ -78,8 +76,6 @@ static void tcp_server_task(void *arg) {
     err = listen(server_socket, 1);
     LWIF_ERROR_CHECK(err, "Unable to listen socket")
 
-    uint8_t* buffer = malloc(IDEAL_PACKET_SIZE);
-
     while (true) {
         ESP_LOGI(TAG, "Socket listening for new connection");
         int client_sock = accept(server_socket, NULL, NULL);
@@ -87,10 +83,16 @@ static void tcp_server_task(void *arg) {
         ESP_LOGI(TAG, "New client connected: %d", client_sock);
 
         configure_socket(client_sock);
+        unsigned int last_cookie = ctx->source->cookie;
         while (true) {
-            size_t received = xStreamBufferReceive(ctx->source, buffer, IDEAL_PACKET_SIZE, pdMS_TO_TICKS(100));
-            if (!send_data(client_sock, buffer, received)) {
-                // disconnected, so let's stop this loop
+            while (last_cookie == ctx->source->cookie) {
+                vTaskDelay(pdMS_TO_TICKS(20)); // sleep for a bit while we wait for new data
+            }
+            lock(ctx->source);
+            last_cookie = ctx->source->cookie;
+            bool success = send_data(client_sock, ctx->source->buffer, ctx->source->available);
+            unlock(ctx->source);
+            if (!success) {
                 break;
             }
         }
@@ -102,7 +104,7 @@ static void tcp_server_task(void *arg) {
 
 }
 
-void server_start(uint16_t port, StreamBufferHandle_t source) {
+void server_start(uint16_t port, common_buffer_t * source) {
     struct config * config = malloc(sizeof(struct config));
     config->port = port;
     config->source = source;

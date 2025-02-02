@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/stream_buffer.h"
 #include "esp_log.h"
 #include "hal/uart_types.h"
 #include "hal/gpio_types.h"
@@ -11,6 +10,7 @@
 #include "p1reader.h"
 #include "server.h"
 #include "wifi.h"
+#include "common_buffer.h"
 
 static const char *TAG = "p1-esp32";
 
@@ -28,10 +28,10 @@ static const char *TAG = "p1-esp32";
 void app_main(void) {
     wifi_start(WIFI_ACCESPOINT, WIFI_PASSWORD);
 
-    StreamBufferHandle_t buf1 = xStreamBufferCreate(2048, 1);
-    p1_start(UART_NUM_0, UART0_RX_PIN, buf1);
+    common_buffer_t* buf1 = allocate(2048);
+    common_buffer_t* buf2 = allocate(2048);
 
-    StreamBufferHandle_t buf2 = xStreamBufferCreate(2048, 1);
+    p1_start(UART_NUM_0, UART0_RX_PIN, buf1);
     p1_start(UART_NUM_1, UART1_RX_PIN, buf2);
 
     server_start(18, buf1);

@@ -15,20 +15,23 @@ static const char *TAG = "p1-reader";
 
 
 struct config {
-    StreamBufferHandle_t target;
+    common_buffer_t *target;
     uart_port_t port;
 };
 
-#define ROUGH_P1_SIZE 1024
 
 static void read_serial_task(void *arg) {
     struct config const * ctx = arg;
-    char *buffer = malloc(ROUGH_P1_SIZE + 1);
     while(true) {
-        int read = uart_read_bytes(ctx->port, buffer, ROUGH_P1_SIZE, pdMS_TO_TICKS(500));
+        lock(ctx->target);
+        // ok, we got the lock
+        int read = uart_read_bytes(ctx->port, ctx->target->buffer, ctx->target->size, pdMS_TO_TICKS(200));
         if (read > 0) {
-            xStreamBufferSend(ctx->target, buffer, read, pdMS_TO_TICKS(50));
+            ctx->target->available = read;
+            ctx->target->cookie++;
         }
+        unlock(ctx->target);
+        vTaskDelay(pdMS_TO_TICKS(100)); // leave room for the reader to pick up the lock
     }
 }
 
@@ -38,6 +41,8 @@ static void read_serial_task(void *arg) {
 #else
     #define __INTR_FLAGS 0
 #endif
+
+#define ROUGH_P1_SIZE 1024
 
 static void setup_uart(const uart_port_t uart_num, gpio_num_t rx_pin) {
     ESP_LOGI(TAG, "Starting serial setup UART %d on GPIO %d", uart_num, rx_pin);
@@ -65,7 +70,7 @@ static void setup_uart(const uart_port_t uart_num, gpio_num_t rx_pin) {
     ESP_LOGI(TAG, "ready to start reading");
 }
 
-void p1_start(const uart_port_t uart_num, gpio_num_t rx_pin, StreamBufferHandle_t target) {
+void p1_start(const uart_port_t uart_num, gpio_num_t rx_pin, common_buffer_t* target) {
     setup_uart(uart_num, rx_pin);
 
     struct config * ctx = malloc(sizeof(struct config));
